@@ -8,6 +8,8 @@ A State Machine library for Arduino based on [rppelayo's finite state machine li
 ### Limitations
 - no support for shallow/deep history states
   - workaround is to add your own history state in a user-defined context and manually assign it on each state's enter callbacks.
+- unwanted callback execution if immediate transition is called in exit/enter callbacks
+  - consider using immediate transition on update callbacks only (for now)
 
 ### TODO
 - stop `handleTransition` if one of the callbacks on exit/enter calls an immediate transition
