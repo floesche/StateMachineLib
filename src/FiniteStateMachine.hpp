@@ -1,13 +1,17 @@
 #pragma once
 #include "StateMachineHandler.hpp"
 
+#ifndef FSM_TRANSITION_STACK_SIZE
+#define FSM_TRANSITION_STACK_SIZE 10
+#endif
+
 template<class TContext>
 class FiniteStateMachine
 {
 public:
     struct State : StateBase<TContext>
     {
-        constexpr State(StateCallback<TContext> enter, StateCallback<TContext> update, StateCallback<TContext> exit) : StateBase<TContext>(enter, update, exit)
+        State(StateCallback<TContext> enter, StateCallback<TContext> update, StateCallback<TContext> exit) : StateBase<TContext>(enter, update, exit)
         {
 
         }
@@ -18,49 +22,43 @@ public:
 
     }
 
-    bool isInState(State const& state) const
+    bool isInState(State& state) const
     {
         return handler.isInState(state);
     }
 
-    void transitionTo(State const& state, bool force = false, bool immediate = false);
-    void update();
+    void update()
+    void transitionTo(State& state, bool immediate = false);
 
 private:
-    void handleTransition();
-
-    StateMachineHandler<TContext> handler;
+    StateMachineHandler<TContext, FSM_TRANSITION_STACK_SIZE> handler;
 };
 
 template<class TContext>
 using FSM = FiniteStateMachine<TContext>;
 
 template<class TContext>
-void FiniteStateMachine<TContext>::handleTransition()
+void FiniteStateMachine<TContext>::transitionTo(FiniteStateMachine<TContext>::State& state, bool immediate)
 {
-    while (handler.isTransitioning(true))
-    {
-        if (handler.execute(handler.getCurrentState(), StateAction::Exit, true))
-            continue;
+    handler.clearStagedTransitions();
+    
+    handler.stageTransition(&state);
+    
+    handler.stageTransition(StateStatus::Entering, &state);
 
-        if (handler.execute(handler.getNextState(), StateAction::Enter, true))
-            continue;
+    auto act = handler.getActiveState();
 
-        handler.completeTransition();
-    }
-}
+    if (act && act->is(StateStatus::Exiting) == false)
+        handler.stageTransition(StateStatus::Exiting, act);
 
-template<class TContext>
-void FiniteStateMachine<TContext>::transitionTo(FiniteStateMachine<TContext>::State const& state, bool force, bool immediate)
-{
-    if (handler.trySetNextState(state, force) && immediate)
-        handleTransition();
+    if (immediate)
+        handler.execute();
 }
 
 template<class TContext>
 void FiniteStateMachine<TContext>::update()
 {
-    handleTransition();
+    handler.execute();
 
-    handler.execute(handler.getCurrentState(), StateAction::Update);
+    handler.stageTransition(StateStatus::Updating, handler.getCurrentState());
 }

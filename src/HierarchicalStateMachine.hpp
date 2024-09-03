@@ -2,8 +2,12 @@
 #include <stdint.h>
 #include "StateMachineHandler.hpp"
 
-#ifndef MAX_STACK_DEPTH
-#define MAX_STACK_DEPTH 10
+#ifndef HSM_STACK_DEPTH
+#define HSM_STACK_DEPTH 10
+#endif
+
+#ifndef HSM_TRANSITION_STACK_SIZE
+#define HSM_TRANSITION_STACK_SIZE (STACK_DEPTH * 3)
 #endif
 
 template<class TContext>
@@ -12,9 +16,9 @@ class HierarchicalStateMachine
 public:
     struct State : StateBase<TContext>
     {
-        State const* const parent;
+        State* const parent;
 
-        constexpr State(State const* parent, StateCallback<TContext> enter, StateCallback<TContext> update, StateCallback<TContext> exit) : StateBase<TContext>(enter, update, exit), parent(parent)
+        constexpr State(State* parent, StateCallback<TContext> enter, StateCallback<TContext> update, StateCallback<TContext> exit) : StateBase<TContext>(enter, update, exit), parent(parent)
         {
 
         }
@@ -26,28 +30,27 @@ public:
     }
 
 
-    bool isInState(State const& state) const
+    bool isInState(State& state) const
     {
         return handler.isInState(state);
     }
 
-    void transitionTo(State const& state, bool force = false, bool immediate = false);
     void update();
+    void transitionTo(State& state, bool immediate = false);
 
 private:
-    static State const* findLeastCommonAncestorState(State const* const s1, State const* const s2);
-    bool executeTopDown(State const* state, State const* ancestor, StateAction action, bool applyStateChange = false);
-    bool executeBottomUp(State const* state, State const* ancestor, StateAction action, bool applyStateChange = false);
-    void handleTransition();
+    static State* findLeastCommonAncestorState(State* const s1, State* const s2);
+    void stageTransitionTopDown(State* state, State* const ancestor, StateStatus status);
+    void stageTransitionBottomUp(State* state, State* const ancestor, StateStatus status);
 
-    StateMachineHandler<TContext> handler;
+    StateMachineHandler<TContext, HSM_TRANSITION_STACK_SIZE> handler;
 };
 
 template<class TContext>
 using HSM = HierarchicalStateMachine<TContext>;
 
 template<class TContext>
-typename HierarchicalStateMachine<TContext>::State const* HierarchicalStateMachine<TContext>::findLeastCommonAncestorState(HierarchicalStateMachine<TContext>::State const* const s1, HierarchicalStateMachine<TContext>::State const* const s2)
+typename HierarchicalStateMachine<TContext>::State* HierarchicalStateMachine<TContext>::findLeastCommonAncestorState(HierarchicalStateMachine<TContext>::State* const s1, HierarchicalStateMachine<TContext>::State* const s2)
 {
     if (s1 == nullptr || s2 == nullptr)
         return nullptr;
@@ -73,75 +76,54 @@ typename HierarchicalStateMachine<TContext>::State const* HierarchicalStateMachi
 }
 
 template<class TContext>
-bool HierarchicalStateMachine<TContext>::executeTopDown(HierarchicalStateMachine<TContext>::State const* state, HierarchicalStateMachine<TContext>::State const* ancestor, StateAction action, bool applyStateChange)
+void HierarchicalStateMachine<TContext>::stageTransitionTopDown(HierarchicalStateMachine<TContext>::State* state, HierarchicalStateMachine<TContext>::State* const ancestor, StateStatus status)
 {
-    if (state == nullptr)
-        return false;
+    State* stateStack[HSM_STACK_DEPTH];
+    uint8_t stateStackTop = 0;
 
-    HierarchicalStateMachine<TContext>::State const* stack[MAX_STACK_DEPTH];
-    uint8_t stackTop = 0U;
-
-    while (state && state != ancestor && stackTop < MAX_STACK_DEPTH)
+    while (state && state != ancestor && stateStackTop < HSM_STACK_DEPTH)
     {
-        stack[stackTop++] = state;
+        stateStack[stateStackTop++] = state;
         state = state->parent;
     }
 
-    while (stackTop > 0)
-        if (handler.execute(stack[--stackTop], action, applyStateChange))
-            break;
-
-    return handler.isTransitioning();
+    while (stateStackTop > 0)
+    {
+        handler.stageTransition(status, stateStack[--stateStackTop]);
+    }
 }
 
 template<class TContext>
-bool HierarchicalStateMachine<TContext>::executeBottomUp(HierarchicalStateMachine<TContext>::State const* state, HierarchicalStateMachine<TContext>::State const* ancestor, StateAction action, bool applyStateChange)
+void HierarchicalStateMachine<TContext>::stageTransitionBottomUp(HierarchicalStateMachine<TContext>::State* state, HierarchicalStateMachine<TContext>::State* const ancestor, StateStatus status)
 {
-    if (state == nullptr)
-        return false;
-
     while (state && state != ancestor)
     {
-        if (handler.execute(state, action, applyStateChange))
-            break;
-
+        handler.stageTransition(status, state);
         state = state->parent;
     }
-
-    return handler.isTransitioning();
 }
 
 template<class TContext>
-void HierarchicalStateMachine<TContext>::handleTransition()
+void HierarchicalStateMachine<TContext>::transitionTo(HierarchicalStateMachine<TContext>::State& state, bool immediate)
 {
-    while (handler.isTransitioning(true))
-    {
-        auto ccs = static_cast<HierarchicalStateMachine<TContext>::State const*>(handler.getCurrentState());
-        auto ncs = static_cast<HierarchicalStateMachine<TContext>::State const*>(handler.getNextState());
+    handler.clearStagedTransitions();
+    
+    handler.stageTransition(&state);
 
-        auto lca = findLeastCommonAncestorState(ccs, ncs);
+    auto act = static_cast<HierarchicalStateMachine<TContext>::State*>(handler.getActiveState());
+    auto lca = findLeastCommonAncestorState(act, &state);
 
-        if (executeBottomUp(ccs, lca, StateAction::Exit, true))
-            continue;
+    stageTransitionBottomUp(&state, lca, StateStatus::Entering);
+    stageTransitionTopDown(act && act->is(StateStatus::Exiting) ? act->parent : act, lca, StateStatus::Exiting);
 
-        if (executeTopDown(ncs, lca, StateAction::Enter, true))
-            continue;
-
-        handler.completeTransition();
-    }
-}
-
-template<class TContext>
-void HierarchicalStateMachine<TContext>::transitionTo(HierarchicalStateMachine<TContext>::State const& state, bool force, bool immediate)
-{
-    if (handler.trySetNextState(state, force) && immediate)
-        handleTransition();
+    if (immediate)
+        handler.execute();
 }
 
 template<class TContext>
 void HierarchicalStateMachine<TContext>::update()
 {
-    handleTransition();
+    handler.execute();
 
-    executeTopDown(static_cast<HierarchicalStateMachine<TContext>::State const*>(handler.getCurrentState()), nullptr, StateAction::Update);
+    stageTransitionBottomUp(static_cast<HierarchicalStateMachine<TContext>::State*>(handler.getCurrentState()), nullptr, StateStatus::Updating);
 }

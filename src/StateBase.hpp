@@ -1,6 +1,7 @@
 #pragma once
+#include <stdint.h>
 
-enum struct StateAction { Enter, Update, Exit };
+enum struct StateStatus : uint8_t { Entering = 1, Updating = 2, Exiting = 3 };
 
 template<class TContext>
 using StateCallback = void (*)(TContext* const);
@@ -9,43 +10,46 @@ template<class TContext>
 struct StateBase
 {
 public:
-    void execute(StateAction action, TContext* const context) const
+    bool is(StateStatus status) const
     {
-        switch (action)
-        {
-            case StateAction::Enter: 
-            {
-                if (enterCallback)
-                    enterCallback(context);
+        return this->status == status;
+    }
 
-                break;
-            }
+    void enter(TContext* const context) const
+    {
+        status = StateStatus::Entering;
 
-            case StateAction::Update:
-            {
-                if (updateCallback)
-                    updateCallback(context);
+        if (enterCallback)
+            enterCallback(context);
 
-                break;
-            }
+        status = StateStatus::Updating;
+    }
 
-            case StateAction::Exit:
-            {
-                if (exitCallback)
-                    exitCallback(context);
+    void update(TContext* const context) const
+    {
+        if (updateCallback)
+            updateCallback(context);
+    }
 
-                break;
-            }
-        }
+    void exit(TContext* const context) const
+    {
+        status = StateStatus::Exiting;
+
+        if (exitCallback)
+            exitCallback(context);
+
+        status = static_cast<StateStatus>(0);
     }
 
 protected:
-    constexpr StateBase(StateCallback<TContext> enter, StateCallback<TContext> update, StateCallback<TContext> exit) : enterCallback(enter), updateCallback(update), exitCallback(exit)
+    constexpr StateBase(StateCallback<TContext> enter, StateCallback<TContext> update, StateCallback<TContext> exit) : status(static_cast<StateStatus>(0)), enterCallback(enter), updateCallback(update), exitCallback(exit)
     {
 
     }
 
 private:
+    mutable StateStatus status;
+
     StateCallback<TContext> const enterCallback;
     StateCallback<TContext> const updateCallback;
     StateCallback<TContext> const exitCallback;

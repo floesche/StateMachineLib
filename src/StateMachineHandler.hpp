@@ -1,75 +1,94 @@
 #pragma once
 #include "StateBase.hpp"
 
-template<class TContext>
+template<class TContext, uint8_t SZ>
 class StateMachineHandler
 {
 public:
-    explicit StateMachineHandler(TContext* context) : currState(nullptr), nextState(nullptr), context(context), transitionOccurred(false)
+    explicit StateMachineHandler(TContext* context) : currentState(nullptr), activeState(nullptr), context(context), transitionStackTop(0), transitionStack{}
     {
 
     }
 
-    void completeTransition()
+    StateBase<TContext>* getCurrentState() const
     {
-        currState = nextState;
-        nextState = nullptr;
+        return currentState;
     }
 
-    bool trySetNextState(StateBase<TContext> const& state, bool force)
+    StateBase<TContext>* getActiveState() const
     {
-        transitionOccurred = force || nextState == nullptr || nextState != &state;
-
-        if (transitionOccurred)
-            nextState = &state;
-
-        return transitionOccurred;
+        return activeState;
     }
 
-    bool isInState(StateBase<TContext> const& state) const
+    bool isInState(StateBase<TContext>& state) const
     {
-        return currState == &state;
+        return currentState == &state;
     }
 
-    bool isTransitioning(bool reset = false)
+    void stageTransition(StateBase<TContext>* const state)
     {
-        auto result = transitionOccurred;
-
-        if (result && reset)
-            transitionOccurred = false;
-
-        return result;
+        stageTransition(static_cast<StateStatus>(0), currentState, state);
     }
 
-    StateBase<TContext> const* getCurrentState() const
+    void stageTransition(StateStatus status, StateBase<TContext>* dst)
     {
-        return currState;
+        stageTransition(status, activeState, dst);
     }
 
-    StateBase<TContext> const* getNextState() const
+    void clearStagedTransitions()
     {
-        return nextState;
+        transitionStackTop = 0;
     }
 
-    bool execute(StateBase<TContext> const* state, StateAction action, bool applyStateChange = false);
+    void execute();
 
 private:
-    StateBase<TContext> const* currState;
-    StateBase<TContext> const* nextState;
+    struct Transition
+    {
+        StateStatus status;
+        StateBase<TContext>** src;
+        StateBase<TContext>* dst;
+    };
+
+    void stageTransition(StateStatus status, StateBase<TContext>*& src, StateBase<TContext>* dst)
+    {
+        if (transitionStackTop >= SZ)
+            return;
+
+        transition[transitionStackTop++] = { status, &src, dst };
+    }
+
+    StateBase<TContext>* currentState;
+    StateBase<TContext>* activeState;
     TContext* const context;
-    bool transitionOccurred;
+
+    uint8_t transitionStackTop;
+    Transition transitionStack[SZ];
 };
 
-template<class TContext>
-bool StateMachineHandler<TContext>::execute(StateBase<TContext> const* state, StateAction action, bool applyStateChange)
+template<class TContext, uint8_t SZ>
+void StateMachineHandler<TContext, SZ>::execute()
 {
-    if (state == nullptr)
-        return false;
-    
-    state->execute(action, context);
+    while (transitionStackTop > 0)
+    {
+        auto transition = transitionStack[--transitionStackTop];
+        
+        *transition.src = transition.dst;
 
-    if (transitionOccurred && applyStateChange)
-        currState = state;
-    
-    return transitionOccurred;
+        if (*transition.src == nullptr)
+            continue;
+
+        switch (transition.status)
+        {
+        case StateStatus::Entering:
+            (*transition.src)->enter(context);
+            break;
+        case StateStatus::Updating:
+            (*transition.src)->update(context);
+            break;
+        case StateStatus::Exiting:
+            (*transition.src)->exit(context);
+            break;
+        }
+    }
 }
