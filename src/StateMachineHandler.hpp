@@ -55,7 +55,7 @@ private:
         if (transitionStackTop >= SZ)
             return;
 
-        transition[transitionStackTop++] = { status, &src, dst };
+        transitionStack[transitionStackTop++] = { status, &src, dst };
     }
 
     StateBase<TContext>* currentState;

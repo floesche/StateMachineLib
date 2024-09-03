@@ -7,7 +7,7 @@
 #endif
 
 #ifndef HSM_TRANSITION_STACK_SIZE
-#define HSM_TRANSITION_STACK_SIZE (STACK_DEPTH * 3)
+#define HSM_TRANSITION_STACK_SIZE (HSM_STACK_DEPTH * 3)
 #endif
 
 template<class TContext>
