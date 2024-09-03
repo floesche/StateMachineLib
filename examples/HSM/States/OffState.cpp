@@ -1,5 +1,5 @@
 #include <Arduino.h>
-#include "States/FooContext.hpp"
+#include "FooContext.hpp"
 
 static void enter(FooContext* const ctx)
 {
