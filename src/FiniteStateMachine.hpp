@@ -27,7 +27,7 @@ public:
         return handler.isInState(state);
     }
 
-    void update()
+    void update();
     void transitionTo(State& state, bool immediate = false);
 
 private:
