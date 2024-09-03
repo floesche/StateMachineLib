@@ -8,10 +8,10 @@ static void enter(FooContext* const ctx)
 
 static void update(FooContext* const ctx)
 {
-    if (digitalRead(4, LOW))
+    if (digitalRead(4) == LOW)
         ctx->fsm->transitionTo(FooContext::sOff);
-    else if (millis() - elapsed >= 5000)
+    else if (millis() - ctx->elapsed >= 5000)
         ctx->fsm->transitionTo(FooContext::sRun);
 }
 
-FSM<FooContext>::State const FooContext::sCooldown(enter, update, nullptr);
+FSM<FooContext>::State FooContext::sCooldown(enter, update, nullptr);

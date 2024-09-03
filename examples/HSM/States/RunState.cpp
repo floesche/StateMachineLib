@@ -13,8 +13,8 @@ static void update(FooContext* const ctx)
         ctx->count++;
     }
 
-    if (ctx->count == 5)
+    if (((ctx->count +1) % 6) == 0)
         ctx->transitionTo(FooContext::sCooldown);
 }
 
-HSM<FooContext>::State const FooContext::sRun(&FooContext::sOnGroup, enter, update, nullptr);
+HSM<FooContext>::State FooContext::sRun(&FooContext::sOnGroup, enter, update, nullptr);

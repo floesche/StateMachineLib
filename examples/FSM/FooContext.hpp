@@ -4,9 +4,9 @@
 
 struct FooContext
 {
-    static FSM<FooContext>::State const sOff;
-    static FSM<FooContext>::State const sRun;
-    static FSM<FooContext>::State const sCooldown;
+    static FSM<FooContext>::State sOff;
+    static FSM<FooContext>::State sRun;
+    static FSM<FooContext>::State sCooldown;
 
     uint8_t count;
     uint8_t elapsed;

@@ -4,10 +4,10 @@
 
 struct FooContext
 {
-    HSM<FooContext>::State const sOff;
-    HSM<FooContext>::State const sOnGroup;
-    HSM<FooContext>::State const sRun;
-    HSM<FooContext>::State const sCooldown;
+    static HSM<FooContext>::State sOff;
+    static HSM<FooContext>::State sOnGroup;
+    static HSM<FooContext>::State sRun;
+    static HSM<FooContext>::State sCooldown;
 
     uint8_t count;
     uint8_t current;
