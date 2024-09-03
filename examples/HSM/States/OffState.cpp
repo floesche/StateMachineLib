@@ -1,5 +1,5 @@
 #include <Arduino.h>
-#include "FooContext.hpp"
+#include "States/FooContext.hpp"
 
 static void enter(FooContext* const ctx)
 {
@@ -8,8 +8,8 @@ static void enter(FooContext* const ctx)
 
 static void update(FooContext* const ctx)
 {
-    if (digitalRead(4, HIGH))
+    if (digitalRead(4) == HIGH)
         ctx->hsm->transitionTo(FooContext::sOnGroup);
 }
 
-HSM<FooContext>::State const FooContext::sOff(nullptr, enter, update, nullptr);
+HSM<FooContext>::State FooContext::sOff(nullptr, enter, update, nullptr);

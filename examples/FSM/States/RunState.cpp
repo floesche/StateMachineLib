@@ -16,10 +16,10 @@ static void update(FooContext* const ctx)
         ctx->count++;
     }
 
-    if (digitalRead(4, LOW))
+    if (digitalRead(4) == LOW)
         ctx->fsm->transitionTo(FooContext::sOff);
-    else if (ctx->count == 5)
+    else if (((ctx->count + 1) % 6) == 0)
         ctx->fsm->transitionTo(FooContext::sCooldown);
 }
 
-FSM<FooContext>::State const FooContext::sRun(enter, update, nullptr);
+FSM<FooContext>::State FooContext::sRun(enter, update, nullptr);

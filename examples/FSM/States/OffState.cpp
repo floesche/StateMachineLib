@@ -8,8 +8,8 @@ static void enter(FooContext* const ctx)
 
 static void update(FooContext* const ctx)
 {
-    if (digitalRead(4, HIGH))
+    if (digitalRead(4) == HIGH)
         ctx->fsm->transitionTo(FooContext::sRun);
 }
 
-FSM<FooContext>::State const FooContext::sOff(enter, update, nullptr);
+FSM<FooContext>::State FooContext::sOff(enter, update, nullptr);

@@ -10,8 +10,8 @@ static void update(FooContext* const ctx)
 {
     ctx->current = millis();
     
-    if (digitalRead(4, LOW))
+    if (digitalRead(4) == LOW)
         ctx->hsm->transitionTo(FooContext::sOff);
 }
 
-HSM<FooContext>::State const FooContext::sOnGroup(nullptr, enter, update, nullptr);
+HSM<FooContext>::State FooContext::sOnGroup(nullptr, enter, update, nullptr);
