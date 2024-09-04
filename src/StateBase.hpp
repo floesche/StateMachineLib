@@ -42,7 +42,7 @@ public:
     }
 
 protected:
-    constexpr StateBase(StateCallback<TContext> enter, StateCallback<TContext> update, StateCallback<TContext> exit) : status(static_cast<StateStatus>(0)), enterCallback(enter), updateCallback(update), exitCallback(exit)
+    StateBase(StateCallback<TContext> enter, StateCallback<TContext> update, StateCallback<TContext> exit) : status(static_cast<StateStatus>(0)), enterCallback(enter), updateCallback(update), exitCallback(exit)
     {
 
     }
