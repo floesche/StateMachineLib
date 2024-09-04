@@ -1,6 +1,10 @@
 #pragma once
 #include "StateMachineHandler.hpp"
 
+#ifndef FSM_TRANSITION_STACK_SIZE
+#define FSM_TRANSITION_STACK_SIZE 10
+#endif
+
 template<class TContext>
 class FiniteStateMachine
 {
@@ -27,9 +31,7 @@ public:
     void transitionTo(State& state, bool immediate = false);
 
 private:
-    static constexpr uint8_t QUEUE_SIZE = 4;
-
-    StateMachineHandler<TContext, QUEUE_SIZE + 1> handler;
+    StateMachineHandler<TContext, FSM_TRANSITION_STACK_SIZE> handler;
 };
 
 template<class TContext>
@@ -38,18 +40,17 @@ using FSM = FiniteStateMachine<TContext>;
 template<class TContext>
 void FiniteStateMachine<TContext>::transitionTo(FiniteStateMachine<TContext>::State& state, bool immediate)
 {
+    handler.clearStagedTransitions();
+    
+    handler.stageTransition(&state);
+    
+    handler.stageTransition(StateStatus::Entering, &state);
+
     auto act = handler.getActiveState();
 
-    handler.setNextState(&state);
-    
-    handler.beginTransitionQueue();
-
     if (act && act->is(StateStatus::Exiting) == false)
-        handler.queueTransition(StateStatus::Exiting, act);
+        handler.stageTransition(StateStatus::Exiting, act);
 
-    handler.queueTransition(StateStatus::Entering, &state);
-    handler.endTransitionQueue(&state);
-    
     if (immediate)
         handler.execute();
 }
@@ -57,6 +58,7 @@ void FiniteStateMachine<TContext>::transitionTo(FiniteStateMachine<TContext>::St
 template<class TContext>
 void FiniteStateMachine<TContext>::update()
 {
-    handler.queueTransition(StateStatus::Updating, handler.getNextState());
     handler.execute();
+
+    handler.stageTransition(StateStatus::Updating, handler.getCurrentState());
 }
