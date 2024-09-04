@@ -5,14 +5,14 @@ template<class TContext, uint8_t SZ>
 class StateMachineHandler
 {
 public:
-    explicit StateMachineHandler(TContext* context) : currentState(nullptr), activeState(nullptr), context(context), transitionStackTop(0), transitionStack{}
+    explicit StateMachineHandler(TContext* context) : currentState(nullptr), activeState(nullptr), nextState(nullptr), context(context), queueHead(0), queueTail(0), transitionOccurred(false), transitionQueue{}
     {
 
     }
 
-    StateBase<TContext>* getCurrentState() const
+    StateBase<TContext>* getNextState() const
     {
-        return currentState;
+        return nextState;
     }
 
     StateBase<TContext>* getActiveState() const
@@ -25,53 +25,70 @@ public:
         return currentState == &state;
     }
 
-    void stageTransition(StateBase<TContext>* const state)
+    void setNextState(StateBase<TContext>* state)
     {
-        stageTransition(static_cast<StateStatus>(0), currentState, state);
+        nextState = state;
     }
 
-    void stageTransition(StateStatus status, StateBase<TContext>* dst)
+    void queueTransition(StateStatus status, StateBase<TContext>* dst)
     {
-        stageTransition(status, activeState, dst);
+        queueTransition(status, activeState, dst);
     }
 
-    void clearStagedTransitions()
+    void endTransitionQueue(StateBase<TContext>* state)
     {
-        transitionStackTop = 0;
+        queueTransition(static_cast<StateStatus>(0), currentState, state);
+    }
+
+    void beginTransitionQueue()
+    {
+        transitionOccurred = true;
+        queueHead = queueTail;
     }
 
     void execute();
 
 private:
-    struct Transition
+    void queueTransition(StateStatus status, StateBase<TContext>*& src, StateBase<TContext>* dst);
+
+    StateBase<TContext>* currentState;
+    StateBase<TContext>* activeState;
+    StateBase<TContext>* nextState;
+    TContext* const context;
+
+    uint8_t queueHead;
+    uint8_t queueTail;
+    bool transitionOccurred;
+   
+    struct
     {
         StateStatus status;
         StateBase<TContext>** src;
         StateBase<TContext>* dst;
-    };
-
-    void stageTransition(StateStatus status, StateBase<TContext>*& src, StateBase<TContext>* dst)
-    {
-        if (transitionStackTop >= SZ)
-            return;
-
-        transitionStack[transitionStackTop++] = { status, &src, dst };
-    }
-
-    StateBase<TContext>* currentState;
-    StateBase<TContext>* activeState;
-    TContext* const context;
-
-    uint8_t transitionStackTop;
-    Transition transitionStack[SZ];
+    } transitionQueue[SZ];
 };
+
+template<class TContext, uint8_t SZ>
+void StateMachineHandler<TContext, SZ>::queueTransition(StateStatus status, StateBase<TContext>*& src, StateBase<TContext>* dst)
+{
+    auto nextQueueTail = (queueTail + 1) % SZ;
+
+    if (nextQueueTail != queueHead)
+    {
+        transitionQueue[queueTail] = { status, &src, dst };
+        queueTail = nextQueueTail;
+    }
+}
 
 template<class TContext, uint8_t SZ>
 void StateMachineHandler<TContext, SZ>::execute()
 {
-    while (transitionStackTop > 0)
+    transitionOccurred = false;
+
+    while (queueHead != queueTail && transitionOccurred == false)
     {
-        auto transition = transitionStack[--transitionStackTop];
+        auto transition = transitionQueue[queueHead];
+        queueHead = (queueHead + 1) % SZ;
         
         *transition.src = transition.dst;
 
