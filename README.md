@@ -4,8 +4,6 @@ A State Machine library for Arduino based on [rppelayo's finite state machine li
 see examples on how to use the library.
 
 ### Configuration
-- `FSM_TRANSITION_STACK_SIZE`: controls how many transitions can be staged on the FSM. Default is 10.
-- `HSM_TRANSITION_STACK_SIZE`: controls how many transitions can be staged on the HSM. Default is 30.
 - `HSM_STACK_DEPTH`: sets the stack depth for the HSM (required for traversing states in top-down manner). Default is 10.
 - Always call transitionTo at `begin` function to initialize the entry point of your state machine.
 
