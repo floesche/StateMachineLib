@@ -20,7 +20,7 @@ public:
         }
     };
 
-    explicit HierarchicalStateMachine(TContext* context) : handler(context)
+    explicit HierarchicalStateMachine(TContext* context, bool handleDeepTransition = false) : handleDeepTransition(handleDeepTransition), handler(context)
     {
 
     }
@@ -40,6 +40,7 @@ private:
     void queueTransitionTopDown(State* state, State* ancestor, StateStatus status);
     void queueTransitionBottomUp(State* state, State* ancestor, StateStatus status);
 
+    bool const handleDeepTransition;
     StateMachineHandler<TContext, QUEUE_SIZE + 1> handler;
 };
 
@@ -105,6 +106,9 @@ void HierarchicalStateMachine<TContext>::transitionTo(HierarchicalStateMachine<T
 {
     auto act = static_cast<HierarchicalStateMachine<TContext>::State*>(handler.getActiveState());
     auto lca = findLeastCommonAncestorState(act, &state);
+
+    if (handleDeepTransition && lca == &state)
+        lca = lca->parent;
 
     handler.setNextState(&state);
     handler.beginTransitionQueue();
