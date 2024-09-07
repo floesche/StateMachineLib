@@ -1,6 +1,6 @@
 {
     "name": "StateMachine",
-    "version": "2.1.0",
+    "version": "2.2.0",
     "description": "A State Machine library for Arduino that provides usage for Finite State Machines (FSM) and Hierarchical State Machines (HSM).",
     "keywords": "state, machine, finite-state-machine, hierarchical-state-machine, fsm, hsm",
     "repository":
