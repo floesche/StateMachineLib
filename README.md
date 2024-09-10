@@ -1,6 +1,8 @@
 # StateMachine
 A simple State Machine library for Arduino based on [rppelayo's finite state machine library](https://github.com/rppelayo/FiniteStateMachine?tab=readme-ov-file).
 
+For more detailed information about the library, please visit our [Wiki](https://github.com/0verflux/StateMachine/wiki).
+
 ## Features
 - **Contexts**: Supports user-defined contexts that encapsulates all relevant data and functionality needed for state callbacks, minimizing the need for accessing global variables or functions on callbacks.
 - **Finite State Machine (FSM)**: A simple state machine, allows operation of predefined set of states, each with customizable `enter`, `update`, and `exit` function pointers. 
