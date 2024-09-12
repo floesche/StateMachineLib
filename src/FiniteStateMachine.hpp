@@ -1,10 +1,9 @@
 #pragma once
-#include "StateMachineHandler.hpp"
+#include "StateCoordinator.hpp"
 
-template<class TContext>
-class FiniteStateMachine
+namespace FiniteSystem
 {
-public:
+    template <class TContext>
     struct State : StateBase<TContext>
     {
         State(StateCallback<TContext> enter, StateCallback<TContext> update, StateCallback<TContext> exit) : StateBase<TContext>(enter, update, exit)
@@ -13,51 +12,58 @@ public:
         }
     };
 
-    explicit FiniteStateMachine(TContext* context) : handler(context)
+    template<class TContext>
+    class StateMachine
     {
+    public:
+        explicit StateMachine(TContext* context) : targetState(nullptr), coordinator(context)
+        {
 
-    }
+        }
 
-    bool isInState(State& state) const
-    {
-        return handler.isInState(state);
-    }
+        bool isCurrentState(State<TContext>& target) const
+        {
+            return coordinator.isCurrentState(target);
+        }
 
-    void update();
-    void transitionTo(State& state, bool immediate = false);
-
-private:
-    static constexpr uint8_t QUEUE_SIZE = 4;
-    StateMachineHandler<TContext, QUEUE_SIZE + 1> handler;
-};
-
-template<class TContext>
-using FSM = FiniteStateMachine<TContext>;
-
-template<class TContext>
-void FiniteStateMachine<TContext>::transitionTo(FiniteStateMachine<TContext>::State& state, bool immediate)
-{
-    auto act = handler.getActiveState();
-
-    handler.setNextState(&state);
+        void update();
+        void transitionTo(State<TContext>& target, bool immediate = false);
     
-    handler.beginTransitionQueue();
-    
-    if (act && act->is(StateStatus::Exiting) == false)
-        handler.queueTransition(StateStatus::Exiting, act);
-
-    handler.queueTransition(StateStatus::Entering, &state);
-
-    handler.endTransitionQueue(&state);
-
-    if (immediate)
-        handler.execute();
+    private:
+        State<TContext>* targetState;
+        StateCoordinator<TContext, 4> coordinator;
+    };
 }
 
 template<class TContext>
-void FiniteStateMachine<TContext>::update()
+using FState = FiniteSystem::State<TContext>;
+
+template<class TContext>
+using FSM = FiniteSystem::StateMachine<TContext>;
+
+template<class TContext>
+void FiniteSystem::StateMachine<TContext>::transitionTo(FiniteSystem::State<TContext>& target, bool immediate)
 {
-    handler.queueTransition(StateStatus::Updating, handler.getNextState());
+    targetState = &target;
+
+    auto activeState = coordinator.getActiveState();
     
-    handler.execute();
+    coordinator.clearPendingTransitions();
+    
+    if (activeState && activeState->is(StateStatus::Exiting) == false)
+        coordinator.stageActiveTransition(TransitionType::Exit, activeState);
+
+    coordinator.stageCurrentTransition(targetState);
+    coordinator.stageActiveTransition(TransitionType::Enter, targetState);
+
+    if (immediate)
+        coordinator.execute();
+}
+
+template<class TContext>
+void FiniteSystem::StateMachine<TContext>::update()
+{
+    coordinator.stageActiveTransition(TransitionType::Update, targetState);
+    
+    coordinator.execute();
 }

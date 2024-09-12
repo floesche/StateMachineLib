@@ -1,7 +1,7 @@
 #pragma once
 #include <stdint.h>
 
-enum struct StateStatus : uint8_t { Entering = 1, Updating = 2, Exiting = 3 };
+enum struct StateStatus : uint8_t { Standby, Entering, Updating, Exiting };
 
 template<class TContext>
 using StateCallback = void (*)(TContext* const);
@@ -38,7 +38,7 @@ public:
         if (exitCallback)
             exitCallback(context);
 
-        status = static_cast<StateStatus>(0);
+        status = StateStatus::Standby;
     }
 
 protected:

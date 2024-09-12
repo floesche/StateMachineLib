@@ -1,12 +1,12 @@
 {
-    "name": "StateMachine",
-    "version": "2.2.0",
-    "description": "A State Machine library for Arduino that provides usage for Finite State Machines (FSM) and Hierarchical State Machines (HSM).",
+    "name": "StateMachineLib",
+    "version": "3.0.0",
+    "description": "A State Machine library for Arduino that provides usage of Finite State Machines (FSM) and Hierarchical State Machines (HSM).",
     "keywords": "state, machine, finite-state-machine, hierarchical-state-machine, fsm, hsm",
     "repository":
     {
       "type": "git",
-      "url": "https://github.com/0verflux/StateMachine.git"
+      "url": "https://github.com/0verflux/StateMachineLib.git"
     },
     "authors":
     [
