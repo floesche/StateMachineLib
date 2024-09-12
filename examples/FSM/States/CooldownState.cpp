@@ -14,4 +14,4 @@ static void update(FooContext* const ctx)
         ctx->fsm->transitionTo(FooContext::sRun);
 }
 
-FSM<FooContext>::State FooContext::sCooldown(enter, update, nullptr);
+FState<FooContext> FooContext::sCooldown(enter, update, nullptr);

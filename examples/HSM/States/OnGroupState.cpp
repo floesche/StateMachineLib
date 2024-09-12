@@ -14,4 +14,4 @@ static void update(FooContext* const ctx)
         ctx->hsm->transitionTo(FooContext::sOff);
 }
 
-HSM<FooContext>::State FooContext::sOnGroup(nullptr, enter, update, nullptr);
+HState<FooContext> FooContext::sOnGroup(nullptr, enter, update, nullptr);

@@ -17,4 +17,4 @@ static void update(FooContext* const ctx)
         ctx->transitionTo(FooContext::sCooldown);
 }
 
-HSM<FooContext>::State FooContext::sRun(&FooContext::sOnGroup, enter, update, nullptr);
+HState<FooContext> FooContext::sRun(&FooContext::sOnGroup, enter, update, nullptr);

@@ -2,7 +2,7 @@
 #include "FooContext.hpp"
 
 FooContext ctx;
-HSM<FooContext> hsm(&ctx);
+HSM<FooContext, 5> hsm(&ctx);
 
 void setup() 
 {

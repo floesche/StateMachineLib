@@ -12,4 +12,4 @@ static void update(FooContext* const ctx)
         ctx->fsm->transitionTo(FooContext::sRun);
 }
 
-FSM<FooContext>::State FooContext::sOff(enter, update, nullptr);
+FState<FooContext> FooContext::sOff(enter, update, nullptr);
