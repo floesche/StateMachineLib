@@ -90,7 +90,7 @@ void HierarchicalSystem::StateMachine<TContext, depth>::stageTransitionsTopDown(
     while (stateStackTop > 0)
     {
         state = stateStack[--stateStackTop];
-        coordinator.stageActiveTransition(status, state);
+        coordinator.stageActiveTransition(type, state);
     }
 }
 
@@ -119,11 +119,11 @@ void HierarchicalSystem::StateMachine<TContext, depth>::transitionTo(Hierarchica
         activeState = activeState->parent;
 
     coordinator.clearPendingTransitions();
-    stageTransitionsTopDown(activeState, leastCommonAncestor, StateStatus::Exiting);
+    stageTransitionsTopDown(activeState, leastCommonAncestor, TransitionType::Exit);
 
     coordinator.stageCurrentTransition(targetState);
 
-    stageTransitionsBottomUp(targetState, leastCommonAncestor, StateStatus::Entering);
+    stageTransitionsBottomUp(targetState, leastCommonAncestor, TransitionType::Enter);
 
     if (immediate)
         coordinator.execute();

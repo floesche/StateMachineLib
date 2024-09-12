@@ -62,7 +62,7 @@ private:
 template<class TContext, uint8_t SZ>
 void StateCoordinator<TContext, SZ>::stageTransition(TransitionType type, StateBase<TContext>*& source, StateBase<TContext>* target)
 {
-    auto newPendingTransitions = (newPendingTransitions + 1) % SZ;
+    auto newPendingTransitions = (pendingTransitions + 1) % SZ;
 
     if (newPendingTransitions != currentTransition)
     {
