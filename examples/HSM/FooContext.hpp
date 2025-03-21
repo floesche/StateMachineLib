@@ -10,8 +10,8 @@ struct FooContext
     static HState<FooContext> sCooldown;
 
     uint8_t count;
-    uint8_t current;
-    uint8_t elapsed;
+    unsigned long current;
+    unsigned long elapsed;
 
     HSM<FooContext, 5>* hsm;
 };

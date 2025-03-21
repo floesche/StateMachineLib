@@ -18,8 +18,10 @@ static void update(FooContext* const ctx)
 
     if (digitalRead(4) == LOW)
         ctx->fsm->transitionTo(FooContext::sOff);
-    else if (((ctx->count + 1) % 6) == 0)
+    else if (((ctx->count + 1) % 6) == 0){
+        ctx->count = 0;
         ctx->fsm->transitionTo(FooContext::sCooldown);
+    }
 }
 
 FState<FooContext> FooContext::sRun(enter, update, nullptr);

@@ -13,8 +13,10 @@ static void update(FooContext* const ctx)
         ctx->count++;
     }
 
-    if (((ctx->count +1) % 6) == 0)
+    if (((ctx->count +1) % 6) == 0){
+        ctx->count = 0;
         ctx->transitionTo(FooContext::sCooldown);
+    }
 }
 
 HState<FooContext> FooContext::sRun(&FooContext::sOnGroup, enter, update, nullptr);

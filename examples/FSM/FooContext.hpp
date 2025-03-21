@@ -9,7 +9,7 @@ struct FooContext
     static FState<FooContext> sCooldown;
 
     uint8_t count;
-    uint8_t elapsed;
+    unsigned long elapsed;
 
     FSM<FooContext>* fsm;
 };
